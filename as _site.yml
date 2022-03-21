@@ -4,7 +4,7 @@ navbar:
   title: "Data Visualisation with R"
   left:
     - text: "Home"
-      href: Visualisation.html
+      href: Survival_report.html
     - text: "About"
       href: about.html
 output:
