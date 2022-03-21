@@ -4,7 +4,7 @@ navbar:
   title: "Data Visualisation with R"
   left:
     - text: "Home"
-      href: Survival_report.html
+      href: index.html
     - text: "About"
       href: about.html
 output:
@@ -13,3 +13,4 @@ output:
     toc: true
     highlight: textmate
     css: styles.css
+    
