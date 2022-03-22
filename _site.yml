@@ -1,7 +1,7 @@
 name: "my-website"
 output_dir: "docs"
 navbar:
-  title: "Data Visualisation with R"
+  title: "Survival Analysis with R"
   left:
     - text: "Home"
       href: index.html
@@ -13,4 +13,4 @@ output:
     toc: true
     highlight: textmate
     css: styles.css
-    
+

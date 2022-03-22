@@ -31,14 +31,6 @@ bladder_cancer<-bladder_cancer%>%filter(status==1 | status==0)%>%filter(time>0)
 ```
 
 
-# Table of Contents
-1. [Data set](#section1)
-2. [Descriptive Analysis](#section5)
-3. [Focusing on response variable, censoring indicator, and categorical variable ](#section3)
-4. [Survival time different between treatment condition](#section4)
-5. [Variable Selection](#section5)
-6. [Parametric Model Selection](#section6)
-
 [//]: # (Justify text for the entire document)
 <div style="text-align: justify"> 
 
