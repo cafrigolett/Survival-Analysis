@@ -1,31 +1,335 @@
 ---
-title: "survival report"
-author: "C. Frigolett C."
-date: "21-03-2022"
+title: "Survival Analysis: recurrence of bladder cancer"
 output: html_document
+geometry: margin=3.5cm
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# 1.  Loading data set 
+
+library(survival)
+library(survminer)
+library(lubridate)
+library(psych)
+library(tidyverse)
+library(ggplot2)
+library(BART)
+library(MASS)
+library(rms)
+library(msm)
+library(kableExtra)
+
+data(bladder)
+
+bladder_cancer<-bladder1
+bladder_cancer["time"]<-bladder_cancer["stop"]-bladder_cancer["start"]
+bladder_cancer<-bladder_cancer%>%filter(enum<2)
+bladder_cancer<-bladder_cancer%>%filter(status==1 | status==0)%>%filter(time>0)
+
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Table of Contents
+1. [Data set](#section1)
+2. [Descriptive Analysis](#section5)
+3. [Focusing on response variable, censoring indicator, and categorical variable ](#section3)
+4. [Survival time different between treatment condition](#section4)
+5. [Variable Selection](#section5)
+6. [Parametric Model Selection](#section6)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+[//]: # (Justify text for the entire document)
+<div style="text-align: justify"> 
 
-```{r cars}
-summary(cars)
+[//]: # (links sections to table of content)
+
+<div id='section1'/>
+## Data set
+
+The dataset Bladder1 is build-in the r package “survival”, it contains information of a study in which 118 patients with recurrent bladder cancer patients were subjected to 3 treatments: Pyridoxine (Vitamin B6); Thiotepa and a Placebo control, to evaluate its effect over recurrence. Along these treatments, the dataset has 3 categorical variables: size (size of the largest initial tumor); number (number of initial tumors. The variable status reveals if the observation corresponds to a recurrence, death from bladder disease, or death from unrelated causes. It also contains the start and end time for each observation. The variable enumeration identifies if the observation corresponds to a first, second or third recurrence.
+The event of interest is the first recurrence. Therefore, the observations corresponding to a second or later recurrence were excluded from the final dataset. In a second step, the observations for which status was death from bladder disease or death from unrelated causes, were taken out as well, only keeping censored and recurrence as possible statuses. The final dataset contains 101 observations.
+
+<div id='section2'/>
+## Descriptive Analysis
+
+Since we are interested in the survival time of the patients, the most desirable descriptive statistics would be based on an estimate of the survival function, which in this case could be the median survival time:
+
+
+```{r kaplan meier, echo=FALSE, fig.align="center"}
+# 2.	Data analysis
+#   2.A.	Descriptive analysis of the variables in the data 
+## fitting KME to specify median survival times and risk sets 
+
+fit <- survfit(Surv(time,status==1)~1 + treatment, data=bladder_cancer)
+
+ggsurvplot(
+  fit,                     
+  pval = TRUE,             
+  conf.int = TRUE,         
+  # point estimaes of survival curves.
+  conf.int.style = "step",  # changes the display of CIs
+  xlab = "Time in months",   
+  #break.time.by = 200,     # break X axis in time intervals by 200.
+  ggtheme = theme_light(), # customize plot and risk table with a theme.
+  risk.table = "abs_pct",  # absolute number and percentage at risk.
+  risk.table.y.text.col = T,
+  risk.table.y.text = FALSE,
+  ncensor.plot = TRUE,      # plot the number of censored subjects at time t
+  surv.median.line = "hv",  # add the median survival pointer.
+  legend.labs = 
+    c("Placebo", "Pyridoxine", "Thiotepa"),    
+  palette = c("#E7B800", "#2E9FDF","#483D8B" ))
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+Here we see that the median survival time is achieve closely for treatments pyridoxine and placebo control in contrast to Thiotepa; however, the confidence intervals for these 3 treatments overlap. Additionally, we can see that the risk set reduces more rapidly for placebo control than for the other treatments. Considering this unclear difference in treatments, further investigations must be done.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+<div id='section3'/>
+## Focusing on response variable, censoring indicator, and categorical variable 
+
+For each of the levels of the categorical variable, compute the survival distribution. Plot them on the same graph. What do the graphs suggest?
+For our categorical variable ‘treatment’, we have three levels where the reference level is ‘placebo’ versus ‘pyridoxine’ and ‘thiotepa’ respectively. We construct a survival curve using the Kaplan-Meier estimator for each level of the ‘treatment’ variable which are then plotted in figure 1.
+
+
+```{r kaplan meier curves, echo=FALSE, fig.align="center"}
+#   2.B.	Descriptive analysis of the variables in the data 
+## a)	For each of the levels of the categorical variable, compute the survival
+##    distribution. Plot them on the same graph. What do the graphs suggest?
+
+# Create the Surv object
+survObj <- Surv(time=bladder_cancer$time, event=bladder_cancer$status==1, type='right')
+
+# Create the survfit object
+fit <- survfit(survObj ~ 1 + treatment, data = bladder_cancer, type = 'kaplan-meier', 
+               conf.type = "log-log")
+
+# Plot the Kaplan-Meier survival curves
+ggsurvplot(fit, data = bladder_cancer)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+In figure 1, we observe that the curves do not suggest a difference among the levels of the categorical variables especially in the early stages of the curve. After time = 10, we observe a certain degree of deviation for treatment = ‘thiotepa’ and treatment = ‘pyridoxine’ as compared to the reference level. 
 
+<div id='section4'/>
+## Survival time different between treatment condition
+
+Given that there was no prior expectation for early or late differences between curves, we used a general log-rank test with a weight function equal to 1. Nevertheless, in consideration of the estimated curves, a new study on a new data set could use a Fleming-Harrington test to assess if there is a late difference between survival curves. Even though it was not included in the report, the test was also performed correcting for unbalanced categorical covariates or confounding factors, the test was no different when stratifying by size or number.
+
+```{r surv dif, echo=FALSE, fig.align="center"}
+# Weighted log rank test
+log_rank <- survdiff(Surv(time, status) ~ treatment, data = bladder_cancer)
+log_rank
+```
+
+The overall p-value is given by the following null Hypothesis:
+
+<h5 align="center">$H_0:S_{placebo}\left(t\right)=S_{pyridoxine}\left(t\right)=S_{thiotepa}\left(t\right)\ \ vs\ \ H_a:S_{placebo}\left(t\right)\neq S_{pyridoxine}\left(t\right)\neq S_{thiotepa}\left(t\right)$</h5>
+
+
+Concluding from the log-rank test, we do not reject the null hypothesis that the survival curves are the same. Hence, we do not have any evidence that the treatment has any effect on the survival curve.
+However, we will still consider treatment levels for the remaining analysis since it is the categorical variable that we picked for further consideration under the cox proportional hazard and later for the parametric models.
+
+<div id='section5'/>
+## Variable Selection
+
+We use a backward selection to build an appropriate model specifying a full model for which the hazard of each patient is explained by all the variables. Thus, we implemented a full COX semiparametric model given as:
+
+<h5 align="center">$h_i\left(t\right)=h_0\left(t\right)\exp{\left(\beta_{pyridoxine}x_{i2}+\beta_{thiotepa}x_{i3}+\beta_{number}\ {number}_i+\beta_{size}{size}_i\ \right)}$</h5>
+
+The selection procedure was implemented in R with function stepAIC (package MASS); however, since we must consider the grouping information provided by treatment, we denoted this variable as the most basic model:
+
+```{r AIC selection, echo=FALSE}
+#   2.C. Analysis of all variables in the data set
+## a)	We are interested in estimating the relative risks of survival for any pair 
+##     of two levels of the categorical variable. Assume that these relative risks,  
+##     as well as any other relative risks, are constant over time, and independent 
+##     of any other covariates
+
+#•	Build an appropriate model for these data, using the model building procedures seen in class.
+fit2<-coxph(Surv(time,status==1)~1 + treatment +number +size, data=bladder_cancer)
+summary(fit2)
+stepAIC(fit2, scope=list(upper = ~ treatment +number +size,
+                         lower = ~ 1 + treatment), direction = "backward")
+```
+
+Given that we have tied observation we cannot resort to the classical estimator of the maximum partial likelihood for non-tied observations. Hence, we used the Efron estimator for tied observations, to compute the likelihood Efron considers that when two observations are equal, one is slightly larger than the other one.
+
+Results showed a non-significant effect for treatment; however, it was kept in the model for the purpose of including at least one categorical covariates to address the objectives of the assignment. We investigated further this issue in the following sections. Finally, to get an estimate and confidence interval for the relative risks, the final model from backward selection was implemented:
+
+<h5 align="center">$h_i\left(t\right)=h_0\left(t\right)\exp{\left(\beta_{pyridoxine}x_{i2}+\beta_{thiotepa}x_{i3}+\beta_{number}\ {number}_i\ \right)}$</h5>
+
+```{r ph cox model, echo=FALSE}
+cox_model<-coxph(Surv(time, status) ~ treatment + number , data = bladder_cancer)
+cox_model
+```
+
+We can visualize the given hazard ratios for our imputed covariates by using a forest plot (`ggforest` in `R`.)
+
+```{r hazard vis, echo=FALSE}
+# Visualization for the harzard ratios
+ggforest(cox_model, data = bladder_cancer)
+```
+
+It must be noticed that these values for the confidence intervals are computed in a regular way as:
+
+<h5 align="center">$\psi_h=\exp{\left(\beta_h\right)}=\exp{\left({\hat{\beta}}_h\pm Z_\frac{\alpha}{2}\ \sqrt{V\left({\hat{\beta}}_h\right)}\right)}$</h5>
+
+However, since we have a non-linear transformation, a symmetric confidence interval is achieved by using the delta method: 
+
+<h5 align="center">$\sqrt n\left(g\left(\hat{\theta}\right)-g\left(\theta\right)\right)\ \xrightarrow{d}\ N\left(0,\sigma^2\left(g\prime\left(\theta\right)\right)^2\right)$</h5>
+
+After correcting for the transformation we obtain:
+
+```{r delta tab, echo=FALSE}
+#•	Find an estimator and confidence interval for these relative risks under this model. 
+
+## ## CI ## ## Deltha method
+cox_model<-coxph(Surv(time, status) ~ treatment + number , data = bladder_cancer)
+
+coeffi<-cox_model$coefficients[1:3]
+varia<-diag(vcov(cox_model))
+alpha1<-deltamethod(~exp(x1), coeffi[1], varia[1])*1.96
+alpha2<-deltamethod(~exp(x1), coeffi[2], varia[2])*1.96
+alpha3<-deltamethod(~exp(x1), coeffi[3], varia[3])*1.96
+
+
+## Table CI DM##
+cidm<-table(c("pyridoxine","thiotepa","number"), c("exp(coef)","lower.95","upper.95"))
+cidm[1,1]<-exp(coeffi[1])
+cidm[1,2]<-exp(coeffi[1])-alpha1 #Lower bound CI DM for treatment pyridoxine 
+cidm[1,3]<-exp(coeffi[1])+alpha1 #Upper bound CI DM for treatment pyridoxine 
+cidm[2,1]<-exp(coeffi[2])
+cidm[2,2]<-exp(coeffi[2])-alpha2 #Lower bound CI DM for treatment thiotepa 
+cidm[2,3]<-exp(coeffi[2])+alpha2 #Upper bound CI DM for treatment thiotepa
+cidm[3,1]<-exp(coeffi[3])
+cidm[3,2]<-exp(coeffi[1])-alpha3 #Lower bound CI DM for treatment number
+cidm[3,3]<-exp(coeffi[1])+alpha3 #Upper bound CI DM for treatment number
+row.names(cidm)<-c("Pyridoxine","Thiotepa","Number")
+colnames(cidm)<- c("$\\exp{\\beta}$", "Lower C.I.", "Upper C.I.")
+
+cidm %>%
+  kbl() %>%
+    kable_material(c("striped", "hover"))
+
+```
+To have a better assessment of time dependency, the obtained risks from our PH model were investigated to see if they are indeed constant over time, using parallel curves. As a diagnostic plot was made using the curves given by the logarithm of the cumulative hazard functions $H_r\left(t\right)$,  with reference to time.  For this reason, we use function Survfit to extract the survival functions for all time points and, knowing that $S\left(t\right)=-\log{\left(S\left(t\right)\right)}$, we transform this survival functions into cumulative hazards, yielding the following graph: 
+
+```{r ph assumption, echo=FALSE, fig.align="center"}
+plot(survfit(cox_model),
+     col=c("blue", "red", "green"), fun="cloglog", ylab="log(-log(Survival Probability))", 
+     xlab = "Time")
+legend(1,0.5, legend=c("Control", "Pyridoxine", "Thiotepa"),
+       col=c("blue", "red", "green"), lty=1, cex=0.8)
+```
+
+Since parallel curves indicate that the PH assumptions are hold, we can see that these are hold after certain time point (e.g. t > 3), but not along in general. This result was further analyzed with a model including interaction with time; however, did not achieve success due to lack of convergence.
+
+Additionally, we used the Schoenfeld test which estimates how the effect for each covariate changes across timepoints. The null hypothesis is that the time dependent effect for the covariate has a slope equal to zero, hence the effect of the covariate is independent of time. The graphical representation of the time dependent estimates for the treatment effect number and age, reveals a constant curve centered at zero in both cases. 
+
+```{r shoenfield test, echo=FALSE, resul.align="center",}
+#Schoenfield test
+test.ph = cox.zph(cox_model)
+ggcoxzph(test.ph)
+```
+
+<div id='section6'/>
+## Parametric model selection
+
+We use the final model that we obtained from the stepwise variable selection for our parametric model selection to select the best fitting distribution. 
+
+```{r Parametric models AIC BIC, echo=FALSE, fig.align="center"}
+# Weibull model
+wbmod <- survreg(Surv(time, status) ~ treatment + number, 
+                 data = bladder_cancer, dist = "weibull")
+
+# Log-Normal model
+lnmod <- survreg(Surv(time, status) ~ treatment + number, 
+                 data = bladder_cancer, dist = "lognormal")
+
+# Exponential model
+expon <- survreg(Surv(time, status) ~ treatment + number, 
+                 data = bladder_cancer, dist = "exponential")
+
+# Log Logistic model
+loglogist <- survreg(Surv(time, status) ~ treatment + number, 
+                     data = bladder_cancer, dist = "loglogistic")
+
+n <- dim(bladder_cancer)[1]
+# Calculate AIC
+AIC <- c(extractAIC(lnmod)[2], extractAIC(wbmod)[2], extractAIC(expon)[2], 
+         extractAIC(loglogist)[2])
+
+# Calculate BIC
+BIC <- c(extractAIC(lnmod, k = log(n))[2], extractAIC(wbmod, k=log(n))[2], 
+         extractAIC(expon, k=log(n))[2], extractAIC(loglogist, k=log(n))[2])
+
+names(AIC) <- c( "log(normal)", "weibull", "exponential", "log(logistic)")
+
+#Compare different models by AIC & BIC
+par_tab<-rbind(AIC,BIC)
+
+par_tab %>%
+  kbl() %>%
+  kable_material(c("striped", "hover"))
+
+```
+
+We use AIC and BIC for selecting the parametric distribution. Both criterion yield log(normal) as the best model for our data when regressed with the variable’s ‘treatment’ and ‘number’.
+
+The Survival function $S\left(t\right)$ is given by:
+
+<h5 align="center">$S\left(t\right)=S_o(e^{\theta x}t)$,</h5>
+
+Where, S_o is a lognormal function and $e^{\theta x}t$ corresponds to the accelerating factor.
+
+The point estimates and interval estimates of the coefficient of the categorical variable both in the AFT model and in the linear model representation.
+
+```{r summary logn, echo=FALSE, fig.align="center"}
+summary(lnmod)
+```
+
+The with treatment and number as covariates has the following acceleration faction:
+
+<h5 align="center">$e^{\theta_{placebo}+{\theta_1x}_{Pyridoxine}+{\theta_2x}_{Thiotepa}+{\theta_3x}_{Number}}$; where $\ \theta=-\gamma$.</h5>
+
+The point estimates and the accelerated factor values are given in the following table:
+
+```{r tab accelerated values, echo=FALSE, fig.align="center"}
+# Point estimates for Log-Normal model
+
+intercept <- exp(-coef(lnmod)[1])
+estimates <- exp(-coef(lnmod)[1]-coef(lnmod)[-1])
+estimates <- cbind(intercept, t(estimates))
+
+# CI using delta method (95%)
+
+coeffi<-lnmod$coefficients[1:4]
+varia2<-diag(vcov(lnmod))
+varia<-vcov(lnmod)
+alpha1<-deltamethod(~exp(-x1), coeffi[1], varia[1,1])*1.96
+alpha2<-deltamethod(~exp(-x1), coeffi[1]+coeffi[2], varia[1,1] + varia[2,2] - 
+                       2*varia[1,2])*1.96
+alpha3<-deltamethod(~exp(-x1), coeffi[1]+coeffi[3], varia[1,1] + varia[3,3] - 
+                       2*varia[1,3])*1.96
+alpha4<-deltamethod(~exp(-x1), coeffi[1]+coeffi[4], varia[1,1] + varia[4,4] - 
+                       2*varia[1,4])*1.96
+alpha <- cbind(alpha1, alpha2, alpha3, alpha4)
+
+# Calculate the intervals
+intervals <- rbind(estimates + alpha, estimates - alpha)
+row.names(intervals) <- c("Upper C.I.", "Lower C.I.")
+colnames(intervals) <- c("Intercept", "Pyridoxine", "Thiotepa", "Number")
+
+intervals %>%
+  kbl() %>%
+  kable_material(c("striped", "hover"))
+```
+
+The linear model where our response follows a log-normal distribution can be written as:
+
+<h5 align="center">$log\ T\ =\ \mu\ +\gamma^tx\ +\ \sigma\ W$,</h5>
+
+Where $T$ stands for the time and $W$ follows a normal distribution. $\gamma$ are the estimated covariates and $\mu$ is the intercept.
+
+</div>

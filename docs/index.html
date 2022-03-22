@@ -9,10 +9,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="C. Frigolett C." />
 
 
-<title>survival report</title>
+<title>Survival Analysis: recurrence of bladder cancer</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,6 +22,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -301,37 +302,376 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">survival report</h1>
-<h4 class="author">C. Frigolett C.</h4>
-<h4 class="date">21-03-2022</h4>
+<h1 class="title toc-ignore">Survival Analysis: recurrence of bladder cancer</h1>
 
 </div>
 
 <div id="TOC">
 <ul>
-<li><a href="#r-markdown">R Markdown</a></li>
-<li><a href="#including-plots">Including Plots</a></li>
+<li><a href="#table-of-contents">Table of Contents</a><ul>
+<li><a href="#data-set">Data set</a></li>
+<li><a href="#descriptive-analysis">Descriptive Analysis</a></li>
+<li><a href="#focusing-on-response-variable-censoring-indicator-and-categorical-variable">Focusing on response variable, censoring indicator, and categorical variable</a></li>
+<li><a href="#survival-time-different-between-treatment-condition">Survival time different between treatment condition</a></li>
+<li><a href="#variable-selection">Variable Selection</a></li>
+<li><a href="#parametric-model-selection">Parametric model selection</a></li>
+</ul></li>
 </ul>
 </div>
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
-<pre class="r"><code>summary(cars)</code></pre>
-<pre><code>##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00</code></pre>
+<div id="table-of-contents" class="section level1">
+<h1>Table of Contents</h1>
+<ol style="list-style-type: decimal">
+<li><a href="#section1">Data set</a></li>
+<li><a href="#section5">Descriptive Analysis</a></li>
+<li><a href="#section3">Focusing on response variable, censoring indicator, and categorical variable</a></li>
+<li><a href="#section4">Survival time different between treatment condition</a></li>
+<li><a href="#section5">Variable Selection</a></li>
+<li><a href="#section6">Parametric Model Selection</a></li>
+</ol>
+<div style="text-align: justify">
+
+<div id='section1'/>
+<div id="data-set" class="section level2">
+<h2>Data set</h2>
+<p>The dataset Bladder1 is build-in the r package “survival”, it contains information of a study in which 118 patients with recurrent bladder cancer patients were subjected to 3 treatments: Pyridoxine (Vitamin B6); Thiotepa and a Placebo control, to evaluate its effect over recurrence. Along these treatments, the dataset has 3 categorical variables: size (size of the largest initial tumor); number (number of initial tumors. The variable status reveals if the observation corresponds to a recurrence, death from bladder disease, or death from unrelated causes. It also contains the start and end time for each observation. The variable enumeration identifies if the observation corresponds to a first, second or third recurrence. The event of interest is the first recurrence. Therefore, the observations corresponding to a second or later recurrence were excluded from the final dataset. In a second step, the observations for which status was death from bladder disease or death from unrelated causes, were taken out as well, only keeping censored and recurrence as possible statuses. The final dataset contains 101 observations.</p>
+<div id='section2'/>
 </div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
-<p><img src="index_files/figure-html/pressure-1.png" width="672" /></p>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
+<div id="descriptive-analysis" class="section level2">
+<h2>Descriptive Analysis</h2>
+<p>Since we are interested in the survival time of the patients, the most desirable descriptive statistics would be based on an estimate of the survival function, which in this case could be the median survival time:</p>
+<p><img src="index_files/figure-html/kaplan%20meier-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Here we see that the median survival time is achieve closely for treatments pyridoxine and placebo control in contrast to Thiotepa; however, the confidence intervals for these 3 treatments overlap. Additionally, we can see that the risk set reduces more rapidly for placebo control than for the other treatments. Considering this unclear difference in treatments, further investigations must be done.</p>
+<div id='section3'/>
+</div>
+<div id="focusing-on-response-variable-censoring-indicator-and-categorical-variable" class="section level2">
+<h2>Focusing on response variable, censoring indicator, and categorical variable</h2>
+<p>For each of the levels of the categorical variable, compute the survival distribution. Plot them on the same graph. What do the graphs suggest? For our categorical variable ‘treatment’, we have three levels where the reference level is ‘placebo’ versus ‘pyridoxine’ and ‘thiotepa’ respectively. We construct a survival curve using the Kaplan-Meier estimator for each level of the ‘treatment’ variable which are then plotted in figure 1.</p>
+<p><img src="index_files/figure-html/kaplan%20meier%20curves-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>In figure 1, we observe that the curves do not suggest a difference among the levels of the categorical variables especially in the early stages of the curve. After time = 10, we observe a certain degree of deviation for treatment = ‘thiotepa’ and treatment = ‘pyridoxine’ as compared to the reference level.</p>
+<div id='section4'/>
+</div>
+<div id="survival-time-different-between-treatment-condition" class="section level2">
+<h2>Survival time different between treatment condition</h2>
+<p>Given that there was no prior expectation for early or late differences between curves, we used a general log-rank test with a weight function equal to 1. Nevertheless, in consideration of the estimated curves, a new study on a new data set could use a Fleming-Harrington test to assess if there is a late difference between survival curves. Even though it was not included in the report, the test was also performed correcting for unbalanced categorical covariates or confounding factors, the test was no different when stratifying by size or number.</p>
+<pre><code>#&gt; Call:
+#&gt; survdiff(formula = Surv(time, status) ~ treatment, data = bladder_cancer)
+#&gt; 
+#&gt;                       N Observed Expected (O-E)^2/E (O-E)^2/V
+#&gt; treatment=placebo    43       29     25.2     0.571     1.044
+#&gt; treatment=pyridoxine 25       15     16.8     0.187     0.275
+#&gt; treatment=thiotepa   32       18     20.0     0.205     0.322
+#&gt; 
+#&gt;  Chisq= 1  on 2 degrees of freedom, p= 0.6</code></pre>
+<p>The overall p-value is given by the following null Hypothesis:</p>
+<h5 align="center">
+<span class="math inline">\(H_0:S_{placebo}\left(t\right)=S_{pyridoxine}\left(t\right)=S_{thiotepa}\left(t\right)\ \ vs\ \ H_a:S_{placebo}\left(t\right)\neq S_{pyridoxine}\left(t\right)\neq S_{thiotepa}\left(t\right)\)</span>
+</h5>
+<p>Concluding from the log-rank test, we do not reject the null hypothesis that the survival curves are the same. Hence, we do not have any evidence that the treatment has any effect on the survival curve. However, we will still consider treatment levels for the remaining analysis since it is the categorical variable that we picked for further consideration under the cox proportional hazard and later for the parametric models.</p>
+<div id='section5'/>
+</div>
+<div id="variable-selection" class="section level2">
+<h2>Variable Selection</h2>
+<p>We use a backward selection to build an appropriate model specifying a full model for which the hazard of each patient is explained by all the variables. Thus, we implemented a full COX semiparametric model given as:</p>
+<h5 align="center">
+<span class="math inline">\(h_i\left(t\right)=h_0\left(t\right)\exp{\left(\beta_{pyridoxine}x_{i2}+\beta_{thiotepa}x_{i3}+\beta_{number}\ {number}_i+\beta_{size}{size}_i\ \right)}\)</span>
+</h5>
+<p>The selection procedure was implemented in R with function stepAIC (package MASS); however, since we must consider the grouping information provided by treatment, we denoted this variable as the most basic model:</p>
+<pre><code>#&gt; Call:
+#&gt; coxph(formula = Surv(time, status == 1) ~ 1 + treatment + number + 
+#&gt;     size, data = bladder_cancer)
+#&gt; 
+#&gt;   n= 100, number of events= 62 
+#&gt; 
+#&gt;                         coef exp(coef) se(coef)      z Pr(&gt;|z|)    
+#&gt; treatmentpyridoxine -0.31932   0.72664  0.32366 -0.987    0.324    
+#&gt; treatmentthiotepa   -0.51500   0.59750  0.31974 -1.611    0.107    
+#&gt; number               0.25723   1.29334  0.06403  4.018 5.88e-05 ***
+#&gt; size                 0.03290   1.03344  0.07354  0.447    0.655    
+#&gt; ---
+#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+#&gt; 
+#&gt;                     exp(coef) exp(-coef) lower .95 upper .95
+#&gt; treatmentpyridoxine    0.7266     1.3762    0.3853     1.370
+#&gt; treatmentthiotepa      0.5975     1.6736    0.3193     1.118
+#&gt; number                 1.2933     0.7732    1.1408     1.466
+#&gt; size                   1.0334     0.9676    0.8947     1.194
+#&gt; 
+#&gt; Concordance= 0.641  (se = 0.038 )
+#&gt; Likelihood ratio test= 14.5  on 4 df,   p=0.006
+#&gt; Wald test            = 16.7  on 4 df,   p=0.002
+#&gt; Score (logrank) test = 18.01  on 4 df,   p=0.001
+#&gt; Start:  AIC=500.13
+#&gt; Surv(time, status == 1) ~ 1 + treatment + number + size
+#&gt; 
+#&gt;          Df    AIC
+#&gt; - size    1 498.32
+#&gt; &lt;none&gt;      500.13
+#&gt; - number  1 511.31
+#&gt; 
+#&gt; Step:  AIC=498.32
+#&gt; Surv(time, status == 1) ~ treatment + number
+#&gt; 
+#&gt;          Df    AIC
+#&gt; &lt;none&gt;      498.32
+#&gt; - number  1 509.63
+#&gt; Call:
+#&gt; coxph(formula = Surv(time, status == 1) ~ treatment + number, 
+#&gt;     data = bladder_cancer)
+#&gt; 
+#&gt;                         coef exp(coef) se(coef)      z       p
+#&gt; treatmentpyridoxine -0.31656   0.72865  0.32311 -0.980   0.327
+#&gt; treatmentthiotepa   -0.51610   0.59684  0.31875 -1.619   0.105
+#&gt; number               0.25753   1.29372  0.06378  4.038 5.4e-05
+#&gt; 
+#&gt; Likelihood ratio test=14.31  on 3 df, p=0.002512
+#&gt; n= 100, number of events= 62</code></pre>
+<p>Given that we have tied observation we cannot resort to the classical estimator of the maximum partial likelihood for non-tied observations. Hence, we used the Efron estimator for tied observations, to compute the likelihood Efron considers that when two observations are equal, one is slightly larger than the other one.</p>
+<p>Results showed a non-significant effect for treatment; however, it was kept in the model for the purpose of including at least one categorical covariates to address the objectives of the assignment. We investigated further this issue in the following sections. Finally, to get an estimate and confidence interval for the relative risks, the final model from backward selection was implemented:</p>
+<h5 align="center">
+<span class="math inline">\(h_i\left(t\right)=h_0\left(t\right)\exp{\left(\beta_{pyridoxine}x_{i2}+\beta_{thiotepa}x_{i3}+\beta_{number}\ {number}_i\ \right)}\)</span>
+</h5>
+<pre><code>#&gt; Call:
+#&gt; coxph(formula = Surv(time, status) ~ treatment + number, data = bladder_cancer)
+#&gt; 
+#&gt;                         coef exp(coef) se(coef)      z       p
+#&gt; treatmentpyridoxine -0.31656   0.72865  0.32311 -0.980   0.327
+#&gt; treatmentthiotepa   -0.51610   0.59684  0.31875 -1.619   0.105
+#&gt; number               0.25753   1.29372  0.06378  4.038 5.4e-05
+#&gt; 
+#&gt; Likelihood ratio test=14.31  on 3 df, p=0.002512
+#&gt; n= 100, number of events= 62</code></pre>
+<p>We can visualize the given hazard ratios for our imputed covariates by using a forest plot (<code>ggforest</code> in <code>R</code>.)</p>
+<p><img src="index_files/figure-html/hazard%20vis-1.png" width="672" /></p>
+<p>It must be noticed that these values for the confidence intervals are computed in a regular way as:</p>
+<h5 align="center">
+<span class="math inline">\(\psi_h=\exp{\left(\beta_h\right)}=\exp{\left({\hat{\beta}}_h\pm Z_\frac{\alpha}{2}\ \sqrt{V\left({\hat{\beta}}_h\right)}\right)}\)</span>
+</h5>
+<p>However, since we have a non-linear transformation, a symmetric confidence interval is achieved by using the delta method:</p>
+<h5 align="center">
+<span class="math inline">\(\sqrt n\left(g\left(\hat{\theta}\right)-g\left(\theta\right)\right)\ \xrightarrow{d}\ N\left(0,\sigma^2\left(g\prime\left(\theta\right)\right)^2\right)\)</span>
+</h5>
+<p>After correcting for the transformation we obtain:</p>
+<table class=" lightable-material lightable-striped lightable-hover" style='font-family: "Source Sans Pro", helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+<span class="math inline">\(\exp{\beta}\)</span>
+</th>
+<th style="text-align:right;">
+Lower C.I.
+</th>
+<th style="text-align:right;">
+Upper C.I.
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Pyridoxine
+</td>
+<td style="text-align:right;">
+0.7286516
+</td>
+<td style="text-align:right;">
+0.2672051
+</td>
+<td style="text-align:right;">
+1.1900982
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Thiotepa
+</td>
+<td style="text-align:right;">
+0.5968415
+</td>
+<td style="text-align:right;">
+0.2239684
+</td>
+<td style="text-align:right;">
+0.9697145
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Number
+</td>
+<td style="text-align:right;">
+1.2937242
+</td>
+<td style="text-align:right;">
+0.5669251
+</td>
+<td style="text-align:right;">
+0.8903781
+</td>
+</tr>
+</tbody>
+</table>
+<p>To have a better assessment of time dependency, the obtained risks from our PH model were investigated to see if they are indeed constant over time, using parallel curves. As a diagnostic plot was made using the curves given by the logarithm of the cumulative hazard functions <span class="math inline">\(H_r\left(t\right)\)</span>, with reference to time. For this reason, we use function Survfit to extract the survival functions for all time points and, knowing that <span class="math inline">\(S\left(t\right)=-\log{\left(S\left(t\right)\right)}\)</span>, we transform this survival functions into cumulative hazards, yielding the following graph:</p>
+<p><img src="index_files/figure-html/ph%20assumption-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Since parallel curves indicate that the PH assumptions are hold, we can see that these are hold after certain time point (e.g. t &gt; 3), but not along in general. This result was further analyzed with a model including interaction with time; however, did not achieve success due to lack of convergence.</p>
+<p>Additionally, we used the Schoenfeld test which estimates how the effect for each covariate changes across timepoints. The null hypothesis is that the time dependent effect for the covariate has a slope equal to zero, hence the effect of the covariate is independent of time. The graphical representation of the time dependent estimates for the treatment effect number and age, reveals a constant curve centered at zero in both cases.</p>
+<p><img src="index_files/figure-html/shoenfield%20test-1.png" width="672" /></p>
+<div id='section6'/>
+</div>
+<div id="parametric-model-selection" class="section level2">
+<h2>Parametric model selection</h2>
+<p>We use the final model that we obtained from the stepwise variable selection for our parametric model selection to select the best fitting distribution.</p>
+<table class=" lightable-material lightable-striped lightable-hover" style='font-family: "Source Sans Pro", helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+log(normal)
+</th>
+<th style="text-align:right;">
+weibull
+</th>
+<th style="text-align:right;">
+exponential
+</th>
+<th style="text-align:right;">
+log(logistic)
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+AIC
+</td>
+<td style="text-align:right;">
+517.3615
+</td>
+<td style="text-align:right;">
+527.4590
+</td>
+<td style="text-align:right;">
+532.1857
+</td>
+<td style="text-align:right;">
+521.8017
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+BIC
+</td>
+<td style="text-align:right;">
+530.3873
+</td>
+<td style="text-align:right;">
+540.4848
+</td>
+<td style="text-align:right;">
+542.6063
+</td>
+<td style="text-align:right;">
+534.8276
+</td>
+</tr>
+</tbody>
+</table>
+<p>We use AIC and BIC for selecting the parametric distribution. Both criterion yield log(normal) as the best model for our data when regressed with the variable’s ‘treatment’ and ‘number’.</p>
+<p>The Survival function <span class="math inline">\(S\left(t\right)\)</span> is given by:</p>
+<h5 align="center">
+<span class="math inline">\(S\left(t\right)=S_o(e^{\theta x}t)\)</span>,
+</h5>
+<p>Where, S_o is a lognormal function and <span class="math inline">\(e^{\theta x}t\)</span> corresponds to the accelerating factor.</p>
+<p>The point estimates and interval estimates of the coefficient of the categorical variable both in the AFT model and in the linear model representation.</p>
+<pre><code>#&gt; 
+#&gt; Call:
+#&gt; survreg(formula = Surv(time, status) ~ treatment + number, data = bladder_cancer, 
+#&gt;     dist = &quot;lognormal&quot;)
+#&gt;                       Value Std. Error     z       p
+#&gt; (Intercept)          3.2579     0.3196 10.19 &lt; 2e-16
+#&gt; treatmentpyridoxine  0.3110     0.4225  0.74 0.46159
+#&gt; treatmentthiotepa    0.5167     0.4058  1.27 0.20292
+#&gt; number              -0.3353     0.0960 -3.49 0.00048
+#&gt; Log(scale)           0.4538     0.0967  4.69 2.7e-06
+#&gt; 
+#&gt; Scale= 1.57 
+#&gt; 
+#&gt; Log Normal distribution
+#&gt; Loglik(model)= -253.7   Loglik(intercept only)= -260
+#&gt;  Chisq= 12.62 on 3 degrees of freedom, p= 0.0055 
+#&gt; Number of Newton-Raphson Iterations: 3 
+#&gt; n= 100</code></pre>
+<p>The with treatment and number as covariates has the following acceleration faction:</p>
+<h5 align="center">
+<span class="math inline">\(e^{\theta_{placebo}+{\theta_1x}_{Pyridoxine}+{\theta_2x}_{Thiotepa}+{\theta_3x}_{Number}}\)</span>; where <span class="math inline">\(\ \theta=-\gamma\)</span>.
+</h5>
+<p>The point estimates and the accelerated factor values are given in the following table:</p>
+<table class=" lightable-material lightable-striped lightable-hover" style='font-family: "Source Sans Pro", helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+Intercept
+</th>
+<th style="text-align:right;">
+Pyridoxine
+</th>
+<th style="text-align:right;">
+Thiotepa
+</th>
+<th style="text-align:right;">
+Number
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Upper C.I.
+</td>
+<td style="text-align:right;">
+0.0625654
+</td>
+<td style="text-align:right;">
+0.0632196
+</td>
+<td style="text-align:right;">
+0.0501251
+</td>
+<td style="text-align:right;">
+0.0943137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Lower C.I.
+</td>
+<td style="text-align:right;">
+0.0143715
+</td>
+<td style="text-align:right;">
+-0.0068483
+</td>
+<td style="text-align:right;">
+-0.0042314
+</td>
+<td style="text-align:right;">
+0.0132746
+</td>
+</tr>
+</tbody>
+</table>
+<p>The linear model where our response follows a log-normal distribution can be written as:</p>
+<h5 align="center">
+<span class="math inline">\(log\ T\ =\ \mu\ +\gamma^tx\ +\ \sigma\ W\)</span>,
+</h5>
+<p>Where <span class="math inline">\(T\)</span> stands for the time and <span class="math inline">\(W\)</span> follows a normal distribution. <span class="math inline">\(\gamma\)</span> are the estimated covariates and <span class="math inline">\(\mu\)</span> is the intercept.</p>
+</div>
+</div>
 </div>
 
 
