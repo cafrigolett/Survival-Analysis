@@ -310,9 +310,8 @@ $(document).ready(function () {
 <ul>
 <li><a href="#data-set">Data set</a></li>
 <li><a href="#descriptive-analysis">Descriptive Analysis</a></li>
-<li><a href="#focusing-on-response-variable-censoring-indicator-and-categorical-variable">Focusing on response variable, censoring indicator, and categorical variable</a></li>
+<li><a href="#survival-time-difference-between-treatment-conditions">Survival time difference between treatment conditions</a></li>
 <li><a href="#survival-time-different-between-treatment-condition">Survival time different between treatment condition</a></li>
-<li><a href="#variable-selection">Variable Selection</a></li>
 <li><a href="#parametric-model-selection">Parametric model selection</a></li>
 </ul>
 </div>
@@ -332,8 +331,8 @@ $(document).ready(function () {
 <p>Here we see that the median survival time is achieve closely for treatments pyridoxine and placebo control in contrast to Thiotepa; however, the confidence intervals for these 3 treatments overlap. Additionally, we can see that the risk set reduces more rapidly for placebo control than for the other treatments. Considering this unclear difference in treatments, further investigations must be done.</p>
 <div id='section3'/>
 </div>
-<div id="focusing-on-response-variable-censoring-indicator-and-categorical-variable" class="section level2">
-<h2>Focusing on response variable, censoring indicator, and categorical variable</h2>
+<div id="survival-time-difference-between-treatment-conditions" class="section level2">
+<h2>Survival time difference between treatment conditions</h2>
 <p>For each of the levels of the categorical variable, compute the survival distribution. Plot them on the same graph. What do the graphs suggest? For our categorical variable ‘treatment’, we have three levels where the reference level is ‘placebo’ versus ‘pyridoxine’ and ‘thiotepa’ respectively. We construct a survival curve using the Kaplan-Meier estimator for each level of the ‘treatment’ variable which are then plotted in figure 1.</p>
 <p><img src="index_files/figure-html/kaplan%20meier%20curves-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>In figure 1, we observe that the curves do not suggest a difference among the levels of the categorical variables especially in the early stages of the curve. After time = 10, we observe a certain degree of deviation for treatment = ‘thiotepa’ and treatment = ‘pyridoxine’ as compared to the reference level.</p>
@@ -356,10 +355,6 @@ $(document).ready(function () {
 <span class="math inline">\(H_0:S_{placebo}\left(t\right)=S_{pyridoxine}\left(t\right)=S_{thiotepa}\left(t\right)\ \ vs\ \ H_a:S_{placebo}\left(t\right)\neq S_{pyridoxine}\left(t\right)\neq S_{thiotepa}\left(t\right)\)</span>
 </h5>
 <p>Concluding from the log-rank test, we do not reject the null hypothesis that the survival curves are the same. Hence, we do not have any evidence that the treatment has any effect on the survival curve. However, we will still consider treatment levels for the remaining analysis since it is the categorical variable that we picked for further consideration under the cox proportional hazard and later for the parametric models.</p>
-<div id='section5'/>
-</div>
-<div id="variable-selection" class="section level2">
-<h2>Variable Selection</h2>
 <p>We use a backward selection to build an appropriate model specifying a full model for which the hazard of each patient is explained by all the variables. Thus, we implemented a full COX semiparametric model given as:</p>
 <h5 align="center">
 <span class="math inline">\(h_i\left(t\right)=h_0\left(t\right)\exp{\left(\beta_{pyridoxine}x_{i2}+\beta_{thiotepa}x_{i3}+\beta_{number}\ {number}_i+\beta_{size}{size}_i\ \right)}\)</span>

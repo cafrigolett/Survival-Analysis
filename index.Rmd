@@ -79,7 +79,7 @@ Here we see that the median survival time is achieve closely for treatments pyri
 
 
 <div id='section3'/>
-## Focusing on response variable, censoring indicator, and categorical variable 
+## Survival time difference between treatment conditions
 
 For each of the levels of the categorical variable, compute the survival distribution. Plot them on the same graph. What do the graphs suggest?
 For our categorical variable ‘treatment’, we have three levels where the reference level is ‘placebo’ versus ‘pyridoxine’ and ‘thiotepa’ respectively. We construct a survival curve using the Kaplan-Meier estimator for each level of the ‘treatment’ variable which are then plotted in figure 1.
@@ -122,8 +122,6 @@ The overall p-value is given by the following null Hypothesis:
 Concluding from the log-rank test, we do not reject the null hypothesis that the survival curves are the same. Hence, we do not have any evidence that the treatment has any effect on the survival curve.
 However, we will still consider treatment levels for the remaining analysis since it is the categorical variable that we picked for further consideration under the cox proportional hazard and later for the parametric models.
 
-<div id='section5'/>
-## Variable Selection
 
 We use a backward selection to build an appropriate model specifying a full model for which the hazard of each patient is explained by all the variables. Thus, we implemented a full COX semiparametric model given as:
 
