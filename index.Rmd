@@ -1,7 +1,16 @@
 ---
 title: "Survival Analysis: recurrence of bladder cancer"
-output: html_document
+author: Cristian Frigolett
 geometry: margin=3.5cm
+output: 
+  html_document:
+    number_sections: yes
+    theme: cerulean
+    highlight: kate
+    toc: yes
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
 ---
 
 ```{r setup, include=FALSE}
@@ -30,20 +39,17 @@ bladder_cancer<-bladder_cancer%>%filter(status==1 | status==0)%>%filter(time>0)
 
 ```
 
-
-[//]: # (Justify text for the entire document)
 <div style="text-align: justify"> 
 
-[//]: # (links sections to table of content)
 
-<div id='section1'/>
-## Data set
+
+# Data set
 
 The dataset Bladder1 is build-in the r package “survival”, it contains information of a study in which 118 patients with recurrent bladder cancer patients were subjected to 3 treatments: Pyridoxine (Vitamin B6); Thiotepa and a Placebo control, to evaluate its effect over recurrence. Along these treatments, the dataset has 3 categorical variables: size (size of the largest initial tumor); number (number of initial tumors. The variable status reveals if the observation corresponds to a recurrence, death from bladder disease, or death from unrelated causes. It also contains the start and end time for each observation. The variable enumeration identifies if the observation corresponds to a first, second or third recurrence.
 The event of interest is the first recurrence. Therefore, the observations corresponding to a second or later recurrence were excluded from the final dataset. In a second step, the observations for which status was death from bladder disease or death from unrelated causes, were taken out as well, only keeping censored and recurrence as possible statuses. The final dataset contains 101 observations.
 
-<div id='section2'/>
-## Descriptive Analysis
+
+# Descriptive Analysis
 
 Since we are interested in the survival time of the patients, the most desirable descriptive statistics would be based on an estimate of the survival function, which in this case could be the median survival time:
 
@@ -78,8 +84,8 @@ ggsurvplot(
 Here we see that the median survival time is achieve closely for treatments pyridoxine and placebo control in contrast to Thiotepa; however, the confidence intervals for these 3 treatments overlap. Additionally, we can see that the risk set reduces more rapidly for placebo control than for the other treatments. Considering this unclear difference in treatments, further investigations must be done.
 
 
-<div id='section3'/>
-## Survival time difference between treatment conditions
+
+# Survival time difference between treatment conditions
 
 For each of the levels of the categorical variable, compute the survival distribution. Plot them on the same graph. What do the graphs suggest?
 For our categorical variable ‘treatment’, we have three levels where the reference level is ‘placebo’ versus ‘pyridoxine’ and ‘thiotepa’ respectively. We construct a survival curve using the Kaplan-Meier estimator for each level of the ‘treatment’ variable which are then plotted in figure 1.
@@ -103,8 +109,6 @@ ggsurvplot(fit, data = bladder_cancer)
 
 In figure 1, we observe that the curves do not suggest a difference among the levels of the categorical variables especially in the early stages of the curve. After time = 10, we observe a certain degree of deviation for treatment = ‘thiotepa’ and treatment = ‘pyridoxine’ as compared to the reference level. 
 
-<div id='section4'/>
-## Survival time different between treatment condition
 
 Given that there was no prior expectation for early or late differences between curves, we used a general log-rank test with a weight function equal to 1. Nevertheless, in consideration of the estimated curves, a new study on a new data set could use a Fleming-Harrington test to assess if there is a late difference between survival curves. Even though it was not included in the report, the test was also performed correcting for unbalanced categorical covariates or confounding factors, the test was no different when stratifying by size or number.
 
@@ -223,8 +227,7 @@ test.ph = cox.zph(cox_model)
 ggcoxzph(test.ph)
 ```
 
-<div id='section6'/>
-## Parametric model selection
+# Parametric model selection
 
 We use the final model that we obtained from the stepwise variable selection for our parametric model selection to select the best fitting distribution. 
 
